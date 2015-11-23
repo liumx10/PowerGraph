@@ -44,7 +44,6 @@ bool line_parser(graph_type &graph, const std::string& filename, const std::stri
 	graphlab::vertex_id_type vid;
 	strm >> vid;
 	graph.add_vertex(vid, single_point(vid));
-
 	while(1){
 		graphlab::vertex_id_type other_vid;
 		strm >> other_vid; 
@@ -190,7 +189,7 @@ public:
 	}
 };
 
-class ClearLaunch:
+class ClearAll:
 	public graphlab::ivertex_program<graph_type, int>,
 	public graphlab::IS_POD_TYPE{
 public:
@@ -213,7 +212,31 @@ public:
 	}
 };
 
-int k, n, m;
+class ClearLaunch:
+	public graphlab::ivertex_program<graph_type, int>,
+	public graphlab::IS_POD_TYPE{
+public:
+	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex)const{
+		return graphlab::NO_EDGES;
+	}
+	int gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const{
+		return 1;
+	}
+	void apply(icontext_type& context, vertex_type& vertex, const int& total){
+		vertex.data().done = false;
+		vertex.data().depth = -1;
+		vertex.data().origin = false;
+	}
+	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const {
+		return graphlab::NO_EDGES;
+	}
+	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const {
+	}
+};
+
+int k; 
+int n; 
+int m;
 
 bool select_node(const graph_type::vertex_type & vertex, std::vector<int> v){
 	if (std::find(v.begin(), v.end(), vertex.id()) != v.end()){
@@ -297,6 +320,9 @@ int main(int argc, char** argv){
 	k = atoi(argv[1]);
 	graph_type graph(dc);
 	graph.load("facebook.txt", line_parser);
+	graph.finalize();
+	
+	dc.cout() << "hello world" << std::endl;
 	n = graph.num_vertices(); 
 	m = graph.num_edges();
 	printf("n: %d, m: %d, k: %d\n", n, m, k);
@@ -321,11 +347,11 @@ int main(int argc, char** argv){
 	graphlab::omni_engine<Decompose> compose_engine(dc, graph, "sync");
 	graphlab::omni_engine<BFSDiameter> bfs_engine(dc, graph, "sync");
 	graphlab::omni_engine<SetOrigin> origin_engine(dc, graph, "sync");
-
+	graphlab::omni_engine<ClearAll> clearall_engine(dc, graph, "sync");
 	for(int i=0; i<iterator; i++){
 		std::cout << "=========== clear ============ " << std::endl;	
-		clear_engine.signal_all();
-		clear_engine.start();
+		clearall_engine.signal_all();
+		clearall_engine.start();
 		
 		std::cout << "=========== decompose =========" << std::endl;
 		boost::function<bool(const graph_type::vertex_type&)> _fn(boost::bind(select_node, _1, select_id));
@@ -356,11 +382,14 @@ int main(int argc, char** argv){
 		bfs_engine.start();
 
 		gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);
+		show_result(gr);
 		if (gr.max_diameter < cur_max_dia){
 			cur_max_dia = gr.max_diameter;
 			cur_id = select_id;
+		}else{
+			continue;
 		}
-		show_result(gr);
+	
 		int s = 2;
 		if (argc > 3){
 			s = atoi(argv[3]);
