@@ -298,15 +298,22 @@ int main(int argc, char** argv){
 	graph.load("facebook.txt", line_parser);
 	n = graph.num_vertices(); 
 	m = graph.num_edges();
+
+	std::cout << "n: " << n << "m: " << m << std::endl;
 	int iterator = atoi(argv[2]);
 	double T = 100.0, r = 0.9;
 
 	std::vector<int> select_id;
 	std::vector<int> cur_id;
-	for (int i=0; i<k; i++){
-		select_id.push_back(i);
-		cur_id.push_back(i);
+	int s = k;
+	while(s > 0){
+		int new_id = rand()%n;
+		if (std::find(select_id.begin(), select_id.end(), new_id) == select_id.end() ){
+			s--;
+			select_id.insert(select_id.begin(), new_id);
+		}
 	}
+	cur_id = select_id;
 
 	int cur_max_dia = 100000;
 
