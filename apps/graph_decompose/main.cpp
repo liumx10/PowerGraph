@@ -293,13 +293,13 @@ void show_result(GatherResult &gr){
 int main(int argc, char** argv){
 	graphlab::mpi_tools::init(argc, argv);
 	graphlab::distributed_control dc;
+	
 	k = atoi(argv[1]);
 	graph_type graph(dc);
 	graph.load("facebook.txt", line_parser);
 	n = graph.num_vertices(); 
 	m = graph.num_edges();
-
-	std::cout << "n: " << n << "m: " << m << std::endl;
+	printf("n: %d, m: %d, k: %d\n", n, m, k);
 	int iterator = atoi(argv[2]);
 	double T = 100.0, r = 0.9;
 
