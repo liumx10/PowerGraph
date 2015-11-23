@@ -24,7 +24,8 @@ struct single_point{
 	int count;
 	int diameter;
 	int depth;
-	single_point():area(-1), id(0), launch(false), done(false), diameter(0){
+	bool branch;
+	single_point():area(-1), id(0), launch(false), done(false), diameter(0), branch(false){
 
 	}
 	explicit single_point(int a){
@@ -34,6 +35,7 @@ struct single_point{
 		done = false;
 		diameter = 0;
 		depth = 0;
+		branch =false;
 	}
 	void save(graphlab::oarchive &oarc) const{
 		oarc << area << id << launch << done << count << diameter << depth;
@@ -102,6 +104,7 @@ class Decompose:
 			if (edge.source().data().done == true){
 				g.area = edge.source().data().area;
 				g.depth = edge.source().data().depth;
+				edge.source().data().branch = true;
 			}
 			return g;
 		}
@@ -162,6 +165,7 @@ public:
 		BFSGather g;
 		if (edge.source().data().area == vertex.data().area && edge.source().data().launch == true){
 			g.depth = edge.source().data().diameter;
+			edge.source().data().branch = true;
 		}
 		return g;
 	}
@@ -220,10 +224,13 @@ public:
 	}
 	void apply(icontext_type& context, vertex_type& vertex, const GreedyGather& total){
 		//std::cout << vertex.data().diameter << " ";
+		if (vertex.data().branch){
+			return;
+		}
 		if (total.diameter < vertex.data().diameter){
 			vertex.data().diameter = total.diameter + 1;
 			vertex.data().area = total.area;
-//			std::cout << "change" << std::endl;
+			std::cout << "change" << std::endl;
 		}
 	}
 	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const {
@@ -246,6 +253,7 @@ public:
 	void apply(icontext_type& context, vertex_type& vertex, const int& total){
 		vertex.data().launch = false;
 		vertex.data().diameter = -1;
+		vertex.data().branch = false;
 	}
 	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const {
 		return graphlab::NO_EDGES;
@@ -483,11 +491,11 @@ int main(int argc, char** argv){
 
 			engine3.signal_all();
 			engine3.start();
-				
+			gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);				
+			
 			clear_engine.signal_all();
 			clear_engine.start();
-	
-			gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);
+
 			end_id.clear();
 			for (std::map<int, int>::const_iterator iter=gr.end_id.begin(); iter != gr.end_id.end(); iter++){
 				end_id.push_back(iter->second);
@@ -498,7 +506,8 @@ int main(int argc, char** argv){
 			graphlab::omni_engine<BFSDiameter> engine2(dc, graph, "sync");
 			engine2.signal_vset(start_set);
 			engine2.start();
-	
+			
+			gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);	
 			end_id.clear();
 			for (std::map<int, int>::const_iterator iter=gr.end_id.begin(); iter != gr.end_id.end(); iter++){
 				end_id.push_back(iter->second);
@@ -513,8 +522,7 @@ int main(int argc, char** argv){
 			engine2.start();
 	
 			gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);
-			show_result(gr);
-		
+			show_result(gr);		
 		}
 	
 	graph.save("output", bfs_compose_writer(), false, true, false, 1);
