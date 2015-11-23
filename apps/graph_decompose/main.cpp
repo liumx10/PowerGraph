@@ -327,20 +327,20 @@ int main(int argc, char** argv){
 	m = graph.num_edges();
 	printf("n: %d, m: %d, k: %d\n", n, m, k);
 	int iterator = atoi(argv[2]);
-	double T = 100.0, r = 0.9;
+	
+	double T = 100.0, r = 0.9, k0 = 0.02 ;
 
 	std::vector<int> select_id;
 	std::vector<int> cur_id;
 	int s = k;
 	while(s > 0){
 		int new_id = rand()%n;
-		if (std::find(select_id.begin(), select_id.end(), new_id) == select_id.end() ){
+		if (std::find(cur_id.begin(), cur_id.end(), new_id) == cur_id.end() ){
 			s--;
-			select_id.insert(select_id.begin(), new_id);
+			cur_id.insert(cur_id.begin(), new_id);
 		}
 	}
-	cur_id = select_id;
-
+	select_id = cur_id;
 	int cur_max_dia = 100000;
 
 	graphlab::omni_engine<ClearLaunch> clear_engine(dc, graph, "sync");
@@ -348,6 +348,9 @@ int main(int argc, char** argv){
 	graphlab::omni_engine<BFSDiameter> bfs_engine(dc, graph, "sync");
 	graphlab::omni_engine<SetOrigin> origin_engine(dc, graph, "sync");
 	graphlab::omni_engine<ClearAll> clearall_engine(dc, graph, "sync");
+
+	std::vector<int> result;
+
 	for(int i=0; i<iterator; i++){
 		std::cout << "=========== clear ============ " << std::endl;	
 		clearall_engine.signal_all();
@@ -383,13 +386,24 @@ int main(int argc, char** argv){
 
 		gr = graph.map_reduce_vertices<GatherResult>(get_compose_result);
 		show_result(gr);
-		if (gr.max_diameter < cur_max_dia){
-			cur_max_dia = gr.max_diameter;
-			cur_id = select_id;
-		}else{
-			continue;
+
+		double de = double(gr.max_diameter - cur_max_dia);
+		bool receive = true;
+		if (de > 0 ){
+			double x = (rand()%10000) /10000.0;
+			double p = exp(0 - de/(T*k0));
+			if ( x > p){
+				// 不接受
+				receive = false;
+			}
 		}
-	
+		if (receive){
+			cur_id = select_id;
+			cur_max_dia = gr.max_diameter;
+		}else{
+			select_id = cur_id;
+		}
+
 		int s = 2;
 		if (argc > 3){
 			s = atoi(argv[3]);
@@ -405,7 +419,10 @@ int main(int argc, char** argv){
 			}
 		}
 		T = r*T;
+
+		result.push_back(max_diameter);
 	}
 
+	std::cout << result <<std::endl;
 	graphlab::mpi_tools::finalize();
 }
