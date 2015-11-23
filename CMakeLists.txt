@@ -237,9 +237,11 @@ if(NOT NO_TCMALLOC)
     ExternalProject_Add(libtcmalloc
     PREFIX ${GraphLab_SOURCE_DIR}/deps/tcmalloc
     # Some users can't access domain googlecode.com ,This is a spare URL
-    # URL http://sourceforge.jp/projects/sfnet_gperftools.mirror/downloads/gperftools-2.0.tar.gz
-    URL http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz
-    URL_MD5 13f6e8961bc6a26749783137995786b6
+	#    URL http://sourceforge.jp/projects/sfnet_gperftools.mirror/downloads/gperftools-2.0.tar.gz
+	URL http://pkgs.fedoraproject.org/repo/pkgs/gperftools/gperftools-2.0.tar.gz/13f6e8961bc6a26749783137995786b6/gperftools-2.0.tar.gz
+	#	URL_MD5 d41d8cd98f00b204e9800998ecf8427e
+	#URL http://gperftools.googlecode.com/files/gperftools-2.0.tar.gz
+	URL_MD5 13f6e8961bc6a26749783137995786b6
     PATCH_COMMAND patch -N -p0 -i ${GraphLab_SOURCE_DIR}/patches/tcmalloc.patch || true
     CONFIGURE_COMMAND <SOURCE_DIR>/configure --enable-frame-pointers --prefix=<INSTALL_DIR> ${tcmalloc_shared}
     INSTALL_DIR ${GraphLab_SOURCE_DIR}/deps/local)

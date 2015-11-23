@@ -20,7 +20,7 @@
 
 #include <stdlib.h>
 #include <graphlab.hpp>
-
+#include <iostream>
 /*
  * Djikstra Graph Node Class
  *
@@ -253,9 +253,9 @@ class DjikstraAlgorithm :
     gather_type gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const {
     Gather g;
     GatherMultiTree tree;
-        for(std::map<long, DjikstraNode>::const_iterator iter = vertex.data().djikstra_pieces.begin();
+	for(std::map<long, DjikstraNode>::const_iterator iter = vertex.data().djikstra_pieces.begin();
             iter != vertex.data().djikstra_pieces.end(); ++iter){
-            long key=iter->first;
+			long key=iter->first;
             if((edge.source().data().djikstra_pieces[key].launched == true)&&
                     (edge.source().data().djikstra_pieces[key].done == false)){
                 double c = edge.data() + edge.source().data().djikstra_pieces[key].cost;
