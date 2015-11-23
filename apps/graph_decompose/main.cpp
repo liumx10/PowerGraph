@@ -369,7 +369,7 @@ int main(int argc, char** argv){
 			//select_id.pop_back();
 			int new_id = rand()%n;
 			std::cout << new_id << std::endl;
-			if (std::find(select_id.begin(), select_id.end(), new_id) != select_id.end() ){
+			if (std::find(select_id.begin(), select_id.end(), new_id) == select_id.end() ){
 				select_id.pop_back();
 				s--;
 				select_id.insert(select_id.begin(), new_id);
